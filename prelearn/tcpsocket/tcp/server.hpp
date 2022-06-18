@@ -18,70 +18,7 @@ using namespace std;
 
 //因为我们要获取里面的东西，所以定义称struct类型的就可以了
 
-//设计一个handler类，在handler类里面对（）操作符进行重载，将（）操作符的执行动作重载为执行server函数的代码
-// class Handler
-// {
-// public:
-//     Handler()
-//     {
-//     }
-//     ~Handler()
-//     {
-//     }
-//     void operator()(int sock, string cliip, int cliport)
-//     {
-//         //执行server函数的代码
-//         char buff[1024];
-//         while(true)
-//         {
-//             ssize_t size=read(sock,buff,sizeof(buff)-1);
-//             if(size>0)//读取成功
-//             {
-//                 buff[size]='\0';
-//                 cout<<cliip<<":"<<cliport<<"#"<<buff<<endl;
-//             }
-//             else if(size==0)//对端关闭了
-//             {
-//                 cout<<cliip<<":"<<cliip<<" close!"<<endl;
-//             }
-//             else
-//             {
-//                 //读取失败
-//                 cerr<<sock<<" read error!"<<endl;
-//                 break;//读取失败的化就关闭
-//             }
-            
-//         }
-//             close(sock);//这个线程用完了就要把这个文件描述符关掉
-//             cout<<cliip<<":"<<cliport<<" service done!"<<endl;
-//     }
-// };
 
-// class Task //任务
-// {
-// private:
-//     int _sockfd;
-//     string _cliip;
-//     int _cliport;
-//     Handler _handler; //处理方法
-// public:
-//     Task() //无参数，就是为了线程池取任务出来执行
-//     {
-//     }
-//     Task(int sock, string ip, int port) //构造函数里面放任务
-//         : _sockfd(sock), _cliip(ip), _cliport(port)
-//     {
-//     }
-//     ~Task()
-//     {
-//     }
-
-//     //处理任务的函数
-//     void Run()
-//     {
-//         _handler(_sockfd, _cliip, _cliport); //调用仿函数
-//     }
-// };
 
 struct Param
 {
@@ -161,7 +98,7 @@ public:
                 buff[s] = 0;
                 fflush(stdout);
                 cout << "#client:" << buff << endl;
-                string msg = "#client";
+                string msg = "#client ";
                 msg += buff;
                 sendto(sock._sockfd, msg.c_str(), msg.size(), 0, (struct sockaddr *)&peer, len);
             }

@@ -96,6 +96,50 @@ class TcpClient
         free(data);
 
     }
+
+    int readn(char* buf,int size)
+    {
+        char* pt=buf;
+        int count=size;
+        while(count>0)
+        {
+            int len=recv(_sockfd,pt,count,0);
+            if(len==-1)
+            {
+                //读取失败
+                return -1;
+            }
+            else if(len==0)
+            {
+                return size-count;
+            }
+            else
+            {
+                pt+=len;
+                count-=len;
+            }
+        }
+        return size;
+    }
+    int RecvMsg(char** buf)
+    {
+        //解包
+
+        int len=0;
+        readn((char*)&len,4);
+        len=htonl(len);
+        char* msg=(char*)malloc(sizeof(char)*(len+1));
+        int size=readn(msg,len);
+        if(size!=len)
+        {
+            close(_sockfd);
+            free(msg);
+            return -1;
+        }
+        msg[size]='\0';
+        *buf=msg;
+        return size;
+    }
     void StartClient()
     {
         
@@ -111,13 +155,17 @@ class TcpClient
             //这样发送会出现丢包问题,所以我们要进行修改
             sendmsg(msg.c_str(),msg.size());//将msg的数据和大小都发送过去
             
+            //发送完之后就要接收数据
+            char* buf;//用来接收数据
+            int ss=RecvMsg(&buf);
+
             // sendto(_sockfd,msg.c_str(),msg.size(),0,(struct sockaddr*)&cli,len);
             // //发送过去了之后
-            char buf[1024];
+            // char buf[1024];
 
-            struct sockaddr_in peer;
-            socklen_t len=sizeof(peer);
-            ssize_t ss=recvfrom(_sockfd,buf,sizeof(buf)-1,0,(struct sockaddr*)&peer,&len);
+            // struct sockaddr_in peer;
+            // socklen_t len=sizeof(peer);
+            // ssize_t ss=recvfrom(_sockfd,buf,sizeof(buf)-1,0,(struct sockaddr*)&peer,&len);
             if(ss>0)
             {
                 buf[ss]=0;
