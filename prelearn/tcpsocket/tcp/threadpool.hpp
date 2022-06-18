@@ -18,6 +18,51 @@ public:
     ~Handler()
     {
     }
+
+
+    int readn(int sock,char* buf,int size)
+    {
+        char* pt=buf;
+        int count=size;
+        while(count>0)
+        {
+            int len=recv(sock,buf,count,0);
+            if(len==0)
+            {
+                //发送端已近断开，直接返回
+                return size-count;
+            }
+            else if(len==-1)
+            {
+                //读取失败
+                return -1;
+            }
+            else
+            {
+                pt+=len;
+                count-=len;
+            }
+        }
+        return size;
+    }
+    int RecvMsg(int sock,char** msg)
+    {
+        int len=0;//查看有多少的数据
+        readn(sock,(char*)&len,4);//先读取4个字节，
+        len=htonl(len);
+        char* data=(char* )malloc(sizeof(char)*(len+1));
+        int length=readn(sock,data,len);
+        if(length!=len)
+        {
+            close(sock);
+            free(data);
+            return -1;
+        }
+        data[len]='\0';
+        *msg=data;
+        return length;
+
+    }
     void operator()(int sock, string cliip, int cliport)
     {
         //执行server函数的代码
@@ -42,13 +87,16 @@ public:
         //     }
         // }
 
-        char buff[1024];
+        char* buff;//接收数据
         while (true)
         {
             //读取数据
             struct sockaddr_in peer;
             socklen_t len = sizeof(peer);
-            ssize_t s = recvfrom(sock, buff, sizeof(buff) - 1, 0, (struct sockaddr *)&peer, &len); // peer里面就是远程的数据了
+            // ssize_t s = recvfrom(sock, buff, sizeof(buff) - 1, 0, (struct sockaddr *)&peer, &len); // peer里面就是远程的数据了
+
+            //使用新的解决粘包问题的读取数据的方法
+            int s=RecvMsg(sock,&buff);//读取数据
             if (s > 0)
             {
                 buff[s] = 0;
