@@ -80,35 +80,35 @@ public:
         }
         tp = new ThreadPool<Task>(); //先动态开辟一个线程池对象
     }
-    static void *Routine(void *args) //因为在类里面，所以不要this指针
-    {
-        Param sock = *(Param *)args;
-        delete args;
-        pthread_detach(pthread_self()); //线程分离就不需要再去join了
-        cout << "create a new pthread for IO" << endl;
-        char buff[MAX];
-        while (true)
-        {
-            //读取数据
-            struct sockaddr_in peer;
-            socklen_t len = sizeof(peer);
-            ssize_t s = recvfrom(sock._sockfd, buff, sizeof(buff) - 1, 0, (struct sockaddr *)&peer, &len); // peer里面就是远程的数据了
-            if (s > 0)
-            {
-                buff[s] = 0;
-                fflush(stdout);
-                cout << "#client:" << buff << endl;
-                string msg = "#client ";
-                msg += buff;
-                sendto(sock._sockfd, msg.c_str(), msg.size(), 0, (struct sockaddr *)&peer, len);
-            }
-            else
-            {
-                cout << "error data" << endl;
-                break;
-            }
-        }
-    }
+    // static void *Routine(void *args) //因为在类里面，所以不要this指针
+    // {
+    //     Param sock = *(Param *)args;
+    //     delete args;
+    //     pthread_detach(pthread_self()); //线程分离就不需要再去join了
+    //     cout << "create a new pthread for IO" << endl;
+    //     char buff[MAX];
+    //     while (true)
+    //     {
+    //         //读取数据
+    //         struct sockaddr_in peer;
+    //         socklen_t len = sizeof(peer);
+    //         ssize_t s = recvfrom(sock._sockfd, buff, sizeof(buff) - 1, 0, (struct sockaddr *)&peer, &len); // peer里面就是远程的数据了
+    //         if (s > 0)
+    //         {
+    //             buff[s] = 0;
+    //             fflush(stdout);
+    //             cout << "#client:" << buff << endl;
+    //             string msg = "#client ";
+    //             msg += buff;
+    //             sendto(sock._sockfd, msg.c_str(), msg.size(), 0, (struct sockaddr *)&peer, len);
+    //         }
+    //         else
+    //         {
+    //             cout << "error data" << endl;
+    //             break;
+    //         }
+    //     }
+    // }
     void StartTcp()
     {
         tp->InitThreadPool(); //初始化线程池

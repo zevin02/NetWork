@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string>
+#include"IO.hpp"
 #include <cstring>
 using namespace std;
 //设计一个handler类，在handler类里面对（）操作符进行重载，将（）操作符的执行动作重载为执行server函数的代码
@@ -20,89 +21,7 @@ public:
     {
     }
 
-    int readn(int sock, char *buf, int size)
-    {
-        char *pt = buf;
-        int count = size;
-        while (count > 0)
-        {
-            int len = recv(sock, buf, count, 0);
-            if (len == 0)
-            {
-                //发送端已近断开，直接返回
-                return size - count;
-            }
-            else if (len == -1)
-            {
-                //读取失败
-                return -1;
-            }
-            else
-            {
-                pt += len;
-                count -= len;
-            }
-        }
-        return size;
-    }
-    int RecvMsg(int sock, char **msg)
-    {
-        int len = 0;                  //查看有多少的数据
-        readn(sock, (char *)&len, 4); //先读取4个字节，
-        len = htonl(len);
-        char *data = (char *)malloc(sizeof(char) * (len + 1));
-        int length = readn(sock, data, len);
-        if (length != len)
-        {
-            close(sock);
-            free(data);
-            return -1;
-        }
-        data[len] = '\0';
-        *msg = data;
-        return length;
-    }
-    int writen(int sock, const char *buf, int size)
-    {
-        const char *pt = buf;
-        int count = size;
-        while (count > 0)
-        {
-            int len = send(sock, pt, count, 0);
-            if (len == 0)
-            {
-                continue;
-            }
-            else if (len == -1)
-            {
-                return -1;
-            }
-            else
-            {
-                pt += len;
-                count -= len;
-            }
-        }
-        return size;
-    }
-    void sendmsg(int sock, const char *buf, int size)
-    {
-        //发送数据
-        char *data = (char *)malloc(sizeof(char) * (size + 4));
-        int biglen = htonl(size);
-        memcpy(data, &biglen, 4);
-        memcpy(data + 4, buf, size); //把数据都拷贝进去
-        //拷贝完之后，data就是一个完整的数据包
-        int ret = writen(sock, data, size + 4);
-        if (ret == -1)
-        {
-            //发送失败
-            free(data);
-            close(sock);
-        }
-        else
-            free(data);
-    }
+
     void operator()(int sock, string cliip, int cliport)
     {
         //执行server函数的代码
@@ -131,8 +50,8 @@ public:
         while (true)
         {
             //读取数据
-            struct sockaddr_in peer;
-            socklen_t len = sizeof(peer);
+            // struct sockaddr_in peer;
+            // socklen_t len = sizeof(peer);
             // ssize_t s = recvfrom(sock, buff, sizeof(buff) - 1, 0, (struct sockaddr *)&peer, &len); // peer里面就是远程的数据了
 
             //使用新的解决粘包问题的读取数据的方法
@@ -185,8 +104,7 @@ public:
         _handler(_sockfd, _cliip, _cliport); //调用仿函数
     }
 };
-// #include"Task.hpp"
-// using namespace ns_task;
+
 namespace ns_threadpool
 {
     const int g_num = 5;
