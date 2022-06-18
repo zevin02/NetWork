@@ -68,7 +68,79 @@ int sendmsg(int cfd,const char* msg,int len)
 //接收端
 //接收指定字节个数
 
-int readn(int fd,)
+int readn(int fd,char* buf,int size)//buf里面就是我们要把数据读取到的地方
+{
+    //我们需要往buf这个内存地址里面写数据了，所以不能加const
+    //我们需要记录还需要读取多少个字节，以及读取到的位置
+    char* pt=buf;
+    int count=size;//我们剩余要接收的字节数
+    while(count>0)
+    {
+        int len=recv(fd,pt,count,0);//pt我们需要读取的地址，count就是我们需要读取的字节数，len就是实际读取到的长度
+        if(len==-1)
+        {
+            //读取失败
+            return -1;
+        }
+        else if(len==0)
+        {
+            //发送端已经断开了连接
+            return size-count;//我们就返回收到的字节数
+        }
+        else
+        {
+            //正常的读取了
+            pt+=len;
+            count-=len;
+        }
+    }
+    return size;//成功返回
+}
+
+
+//接收函数
+int recvmsg(int fd,char** msg)//这里的msg是一个输出型参数
+{
+    //我们需要先把数据头给读出来，看它的数据是有多少的数据
+    int len=0;
+    readn(fd,(char*)&len,4);//我们把数据读取到len里面
+    //现在还是网络字节序，我们需要将它转化为主机字节序
+    len=ntohl(len);
+    cout<<"要接收到的数据块的长度为"<<len<<endl;
+    //根据我们读取到的长度len（有效数据的大小）来分配长度
+    char* data=(char*)malloc(sizeof(len+1));//+1是‘\0’,字符串结束的标志
+    //再去调用这个函数
+    int length=readn(fd,data,len);//我们要接收的数据长度是len
+    if(length==len)
+    {
+        cout<<"读取成功"<<endl;
+
+    }
+    else
+    {
+        //接收数据失败了
+        cout<<"接收数据失败了"<<endl;
+        close(fd);
+        free(data);//因为接收失败了，所以这块内存就没有意义了
+        return -1;
+    }
+    data[len]='\0';
+    *msg=data;
+
+}
+
+
+//再子线程里面
+char* buf;
+int len=recvmmsg(fd,&buf);//buf里面的就是存放的数据
+if(len>0)
+{
+    //成功
+    /*
+    执行完之后，一系列操作之后，再把数据发送出去
+    free(buf)
+    */
+}
 
 int main()
 {
