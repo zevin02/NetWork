@@ -7,6 +7,7 @@
 #include"IO.hpp"
 #include<string>
 #include<iostream>
+#include<signal.h>
 using namespace std;
 int main()
 {
