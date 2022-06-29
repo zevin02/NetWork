@@ -18,7 +18,7 @@ int main()
     }
     struct sockaddr_in cli;//初始化服务器的地址结构
     cli.sin_family=AF_INET;
-    cli.sin_port=htons(8000);
+    cli.sin_port=htons(8088);
     inet_pton(AF_INET,"127.0.0.1",&(cli.sin_addr.s_addr));
     // cli->sin_addr.s_addr=htonl(INADDR_ANY);//本地中任意的一个ip地址,要连接到服务器的ip
     int res=connect(sockfd,(struct sockaddr*)&cli,sizeof(cli));//使用现有的socket和服务器进行一个连接，所以这里是要获得服务器的信息
@@ -44,7 +44,8 @@ int main()
         }
         else
         {
-            exit(1);
+            cout<<"fail"<<endl;
+            break;
         }
         
     }
