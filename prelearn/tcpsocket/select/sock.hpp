@@ -23,6 +23,7 @@ class Sock
         }
         return sockfd;
     }
+    
     static void Listen(int sockfd)
     {
         if(listen(sockfd,5)<0)

@@ -11,7 +11,7 @@ class Server
 private:
   int _sockfd;
   int _port;
-  int rfd_array[NUM]; //这个数组里面存放着我们需要的那些要响应的文件描述符
+  int rfd_array[NUM]; //这个数组里面存放着我们需要的那些要响应的文件描述符,一开始都给它赋一个初值为-1
 public:
   Server(int port = 8088)
       : _port(port), _sockfd(-1)
@@ -34,15 +34,16 @@ public:
   void Start()
   {
     int maxfd = _sockfd; // select的最大值
-    fd_set rfds,allset;
+    fd_set rfds,allset;//rset里面就是我们要读的位图，而allset里面就是供我们操作的位图
     FD_ZERO(&allset);
     FD_SET(_sockfd,&allset);
     while (1)
     {
-      rfds=allset;
+      rfds=allset;//每次开始都要把前一次操作的allset的值赋给rset，allset里面就是我们想要监听的文件描述符
       //每次time_out都要设置一次rfds，成本很高
       //是否返回值为0的时候，不需要走这里
-      for (int i = 0; i < NUM; i++)
+      int tmp=maxfd;
+      for (int i = 0; i <= tmp; i++)//
       {
         if (rfd_array[i] != -1)
         {
@@ -53,34 +54,18 @@ public:
           if (rfd_array[i] > maxfd)
           {
             maxfd = rfd_array[i];
+            cout<<"maxfd="<<maxfd;
           }
         }
       }
       //每隔5秒select不成功返回一次，
-      struct timeval timeout = {5, 0};
-      // switch (select(maxfd + 1, &rfds, nullptr, nullptr, nullptr)) // select调用之后rfds里面返回的是真正运用的
-      // {
-      // case -1:
-      //   perror("select");
-      //   break;
-      // case 0:
-      //   cout << "time out" << endl;
-      //   // time out 返回，没有事情发生
-      //   break;
-      // default:
-      //   cout << "event ready" << endl;
-      //   Hand(&rfds,maxfd,&allset); //这里面就是read的位图
-      //   break;
-      // }
-      int retval=select(maxfd + 1, &rfds, nullptr, nullptr, nullptr);
+      struct timeval timeout = {5, 0};//设置超时时间
+      int retval=select(maxfd + 1, &rfds, nullptr, nullptr, nullptr);//阻塞等待
       if(retval<0)
       {
+        //等待失败
         perror("select");
         exit(1);
-      }
-      else if(retval==0)
-      {
-        cout<<"nothing happened"<<endl;
       }
       else
       {
@@ -88,8 +73,9 @@ public:
         Hand(&rfds,maxfd,&allset);
       }
     }
+    close(_sockfd);//结束的时候关掉监听文件描述符
   }
-  void Add2Rsock(int fd)
+  void Add2Rsock(int fd,fd_set* allset)//把新的文件描述符添加进去
   {
     int i = 0;
     for (i = 0; i < NUM; i++)
@@ -106,7 +92,8 @@ public:
     else
     {
       cout << "new index put in " << endl;
-      rfd_array[i] = fd; //添加进去
+      rfd_array[i] = fd; //添加进去,进行管理，
+      FD_SET(fd,allset);//添加到读的位图里面去
     }
   }
   void Hand(fd_set *rfds,int maxfd,fd_set*allset)
@@ -121,34 +108,37 @@ public:
           //护理事情
           if (rfd_array[i] == _sockfd)
           {
-            //做新的连接
+            //做新的连接,监听文件描述符有东西要发送，执行连接操作
+
             struct sockaddr_in peer;
+            memset(&peer,0,sizeof(peer));
             socklen_t len = sizeof(peer);
             int fd = accept(_sockfd, (struct sockaddr *)&peer, &len);
-            Add2Rsock(fd);
+            //把它添加到读的位图里面，让操作 
+            Add2Rsock(fd,allset);
           }
-          else
+          else//非监听文件描述符，所以就是我们监听的文件描述符有数据发送
           {
             //数据接收
             char *buf;
             int s = RecvMsg(rfd_array[i], &buf);
             cout << "read msg" << endl;
             cout<<"s="<<s<<endl;
-            if (s <= 0)
+            if (s == 0)
             {
 
               //对端关闭
               cout << "error data" << endl;
-              rfd_array[i] = -1; //把它关闭掉
               close(rfd_array[i]);
               FD_CLR(rfd_array[i],allset);
-
+              rfd_array[i] = -1; //把它关闭掉
             }
+           
             else
             {
 
               buf[s] = 0;
-              cout << "server recv" << buf << endl;
+              cout << "server recv " << buf << endl;
               string ret = buf;
               ret += " server done";
               sendmsg(rfd_array[i], ret.c_str(), ret.size());
