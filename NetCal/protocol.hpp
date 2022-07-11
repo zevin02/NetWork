@@ -16,12 +16,13 @@ struct request_t
     int x;                      //10
     int y;                      //0
     char opt;//我们协议上是支持  //
+    request_t()=default;
 };//请求协议
 
 
 //这里我们写一个响应格式
 struct response_t
 {
-    int code;//程序运算完毕的计算状态，code=0（success），code=-1（：\0），先检测code，得到result才有意义
+    int code;//程序运算完毕的计算状态，code=0（success），code=-1（：\0）,code=-2(%0)，先检测code，得到result才有意义
     int result;//计算结果,能否区分是正常的计算结果，还是异常退出结果
 };
