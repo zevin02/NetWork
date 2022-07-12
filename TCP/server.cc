@@ -93,7 +93,7 @@ int main()
         //我们在子进程这边把监听描述符关闭
         {
             // child
-            close(sockfd);
+            close(sockfd);//只是会继承下来但是，关闭不影响其他进程
             if(fork()>0)
             exit(0);//这个叫做退出的是子进程，向后走的进程是孙子进程
 

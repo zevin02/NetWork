@@ -63,7 +63,7 @@ namespace ns_task
             // close(_sockfd);//跑完了就把套接字关掉就可以了
         }
 
-        int operator()() //重载一个函数
+        int operator()() //重载一个仿函数
         {
             return Run();
         }

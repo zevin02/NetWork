@@ -63,7 +63,7 @@ int main()
         //先构建一个任务
         Task t(newsockfd);
         // 2.将任务push到后端的线程池就可以了
-        ThreadPool<Task>::GetInstance()->PushTask(t); //这样就完了//同样这是懒汉模式
+        ThreadPool<Task>::GetInstance()->PushTask(t); //这样就完了//同样这是懒汉单例模式
 
         //这样使用的话，线程是不会增多的，退出的时候，线程池也不会再变化，这就不会有线程问题
 
