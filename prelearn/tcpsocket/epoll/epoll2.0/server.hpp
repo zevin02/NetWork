@@ -12,7 +12,7 @@
 
     编码注意：
     * 一个文件描述符，需要有读和写的缓冲区
-    * 我们自己定义的协议，当检测到data里面ptr为空的时候，就是监听套接字
+    * 我们自己定义的协议，当检测到data里面ptr为空的时候，就是监听套接字,应用层协议，我们自己定制，没有使用http协议
 
 
 */
@@ -36,7 +36,7 @@ private:
     int _port;
 
 public:
-    Server()=default;
+    Server()=default;//生成默认的构造函数
     Server(int port)
         : _port(port), _epollfd(-1), _sockfd(-1)
     {
@@ -48,10 +48,10 @@ public:
     void InitServer()
     {
         _sockfd = Sock::Socket();
-        Sock::SetSockOpt(_sockfd);
+        Sock::SetSockOpt(_sockfd);//设置端口复用
         Sock::Bind(_sockfd, _port, "127.0.0.1");
         Sock::Listen(_sockfd);
-        //创建epoll模型
+        //创建epoll模型，先创建一个epoll句柄
         _epollfd = epoll_create(1);
     }
     void Addfd2EpollFd(int fd, uint32_t event) //使用fd的话就可以多次利用
@@ -69,11 +69,11 @@ public:
         else if (event & EPOLLIN) //如果是读事件的话
         {
             //其他事件获取到缓冲区和fd存放
-            ev.data.ptr = (void *)new Bucket(fd);
+            ev.data.ptr = (void *)new Bucket(fd);//把这个ptr里面填充字段
         }
         //放入一个节点到红黑树
         //内部应该是会拷贝该节点--bug
-        if (epoll_ctl(_epollfd, EPOLLIN, fd, &ev) < 0) //把他添加进去
+        if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, fd, &ev) < 0) //把他添加进去
         {
             perror("epoll_ctl");
         }
@@ -89,22 +89,24 @@ public:
         //就绪队列中的event是从0开始放的
         for (int i = 0; i < num; i++)
         {
-            uint32_t status = event[i].events;          // status 里面存放的是这个文件描述需要操作的状态
-            Bucket *data = (Bucket *)event[i].data.ptr; //用ptr初始化
+            uint32_t status = event[i].events;          // status 里面存放的是这个文件描述需要操作的事件
+            Bucket *data = (Bucket *)event[i].data.ptr; //用ptr初始化，因为ptr里面存放的就是我们需要的东西,这个是从树里面读取到的状态
             //这里打data里面就存放了文件描述符和一些信息
-            if (status & EPOLLIN)//读入
+            if (status & EPOLLIN)//读入，往服务器输入了东西
             {
                 //监听和接收数据
                 if (data == nullptr)
                 {
                     //因为我们前面规定了如果ptr为空的话就代表了他是一个监听文件描述符
                     int fd = Sock::Accept(_sockfd); //这里我们就要建立连接，并且把这个文件描述符添加到epoll里面
-                    Addfd2EpollFd(fd, EPOLLIN);
+                    if(fd<0)
+                    continue;
+                    Addfd2EpollFd(fd, EPOLLIN);//这里我们把新申请上来的文件描述符添加到红黑树里面
                 }
                 else
                 {
                     //发送端向服务端发送数据过来
-                    ssize_t s = recv(data->fd, data->buf + data->pos, sizeof(data->buf) - data->pos, 0); //阻塞等待,同时解决了粘包问题
+                    ssize_t s = recv(data->fd, data->buf + data->pos, sizeof(data->buf) - data->pos, 0); //阻塞等待,同时解决了粘包问题，字节流问题
                     if (s == 0)
                     {
                         //对端关闭
@@ -114,19 +116,19 @@ public:
                     else if (s > 0)
                     {
                         //本次读取成功
-                        data->pos += s; // pos往后走
+                        data->pos += s; // pos往后走，读取s字节
                         cout << "本次读取数据 " << data->buf << endl;
                         if (data->pos >= (int)sizeof(data->buf))
                         {
-                            //pos数目超过了buf的值
+                            //pos数目超过了buf的值，说明此时数据已经都完整的读取了，全部读取之后才能够改变
                             //说明此时的数据已经都放在红黑树上面了，可以拿去了,因为可能会有粘包问题导致数据拿去不了
                             //直接改变属性发送即可
                             struct epoll_event newev;
                             newev.events=EPOLLOUT;
                             newev.data.ptr=data;
-                            //让发送的时候也能够使用这个控制是否读完
-                            data->pos=0;
-                            epoll_ctl(_epollfd,EPOLL_CTL_MOD,data->fd,&newev);
+                            //让发送的时候也能够使用这个控制是否写完
+                            data->pos=0;//因为前面pos值为读取到的字节大小，很大，所以我们为了能够重复使用，就在这里串行设置成0
+                            epoll_ctl(_epollfd,EPOLL_CTL_MOD,data->fd,&newev);//因为已经接收过来了，所以把它的属性修改成发送的状态
                             
 
 
@@ -167,13 +169,13 @@ public:
             // OS-》user
 
             struct epoll_event eventss[20];                    //出来的数组
-            int ret = epoll_wait(_epollfd, eventss, 20, 1000); //我们想要一次处理20个请求,超时时间1000s
-            if (ret < 0)
+            int ret = epoll_wait(_epollfd, eventss, 20, 1000); //我们想要一次处理20个请求,超时时间1000s，多路IO转接
+            if (ret < 0)//失败
             {
                 perror("epoll_wait");
                 exit(1);
             }
-            else if (ret == 0)
+            else if (ret == 0)//超时，重新等待
             {
                 cout << "time out...." << endl;
                 continue;
@@ -181,7 +183,7 @@ public:
             else
             {
                 //有事情要我们去做，所以处理事情
-                HandEvent(eventss, ret);
+                HandEvent(eventss, ret);//ret里面就是有多少个事件，eventss里面就是有事件的红黑树
             }
         }
     }
