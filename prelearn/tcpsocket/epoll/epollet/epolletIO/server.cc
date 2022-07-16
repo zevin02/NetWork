@@ -3,6 +3,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string>
+#include<glog/logging.h>
+
 void addfd(int epollfd, int sockfd)
 {
     struct epoll_event eve;
@@ -30,6 +32,7 @@ void et(struct epoll_event *events, int ret, int epollfd, int sockfd)
             //这段代码不会被重复触发，因为我们设置的是et模式，非阻塞，所以我们要循环读取
             //因为它不会二次触发数据，所以就要求我们一次性把数据都读完，我们只能循环，非阻塞，没有数据的时候退出就行了
             string str = "";
+            //这就是读的主要逻辑
             while (1)
             {
                 memset(buf, 0, sizeof(buf));
@@ -77,9 +80,14 @@ void et(struct epoll_event *events, int ret, int epollfd, int sockfd)
                     // cout<<buf;//这样就不会因为缓冲区设置的问题，而导致片段访问
                 }
             }
-            fflush(stdin);
-            cout << str;
-            cout << endl; //循环结束之后，再回车即可
+            if(str.size())
+            str.pop_back();
+            // fflush(stdin);
+            cout << str<<endl;
+            
+            str+=" client hello";
+            send(events[i].data.fd,str.c_str(),str.size(),0);
+            // cout << endl; //循环结束之后，再回车即可
         }
     }
 }
