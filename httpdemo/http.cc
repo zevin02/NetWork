@@ -13,7 +13,7 @@
 // WWWROOT就叫做web根目录，wwwroot目录下放置的内容，就叫做资源,这个可以被拷贝到linux目录下的任何一个地方,同时我们里面资源更新，服务器也会更新这个资源
 
 #define wwwroot "./wwwroot/"
-#define HOME_PAGE "index.html"
+#define HOME_PAGE "index.html-a"
 
 void *handler(void *args)
 {
@@ -55,6 +55,14 @@ void *handler(void *args)
     */
 //读到了报头
 //我们要返回响应
+
+        // string response ="http/1.0 301 Permanently move\n";//301永久性重定向
+        string response ="http/1.0 302 Found\n";//302临时性重定向
+        response+="Location: https://www.qq.com/\n";//这个就是用来搭配3xx来使用的，告诉我们要跳转到哪里去,访问我们的网址之后，就会跳转到qq里面去
+        response+="\n";
+        send(sockfd,response.c_str(),response.size(),0);//先把报头发送给客户端
+
+
 #if 0
         string response="http/1.0 200 OK\n";//响应行，版本http/1.0 状态码200 状态码解释 OK
         response+="Content-Type: text/plain\n";//text/plain代表正文是普通文本，这个说明了后续的一些正文都是一些普通的文本文件
@@ -77,24 +85,29 @@ void *handler(void *args)
         send(sockfd,response.c_str(),response.size(),0);//先把报头发送给客户端
         sendfile(sockfd,fd,nullptr,st.st_size);//把正文发送了过去
 #endif
-#if 1
+#if 0
         string html_file = wwwroot; //首页
         html_file += HOME_PAGE;     //这个就是默认文件
                                     //但是我们需要分析请求里面的目录信息
                                     //返回的时候不仅仅是返回正文网页信息，而是还要包括http的请求
-        string response = "http/1.0 200 OK\n";
-        response += "Content-Type: text/html; charset=utf8\n"; //这里同时设置一下文字的类型
-        struct stat st;
-        stat(html_file.c_str(), &st);
-        off_t size = st.st_size;
 
         std::ifstream in(html_file); //打开一个文件
         if (!in.is_open())           //判断打开是否成功
         {
+            string response = "http/1.0 404 NOT FOUND\n";
+            response += "Content-Type: text/html; charset=utf8\n"; //这里同时设置一下文字的类型
+            response+="\n";
+            response+="你访问的资源不存在";
+            send(sockfd, response.c_str(), response.size(), 0); //先把报头发送给客户端
             cerr << "open html error!" << endl;
         }
         else
         {
+            string response = "http/1.0 200 OK\n";
+            response += "Content-Type: text/html; charset=utf8\n"; //这里同时设置一下文字的类型
+            struct stat st;
+            stat(html_file.c_str(), &st);
+            off_t size = st.st_size;
             string content;
             string line;
             while (getline(in, line)) // getline第一个是从哪里读，第二个就是读到哪里，
