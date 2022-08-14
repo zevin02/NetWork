@@ -30,7 +30,7 @@ namespace ns_task
         ~Task()
         {
         }
-        int Run()//执行任务
+        void operator()()//执行任务
         {
             while (true)
             {
@@ -42,28 +42,11 @@ namespace ns_task
                 {
                     buf[s] = 0;
                     cout<<"buf="<<buf<<endl;
-                    //任务
-                    //1. 这样我们判断一下，如果是一行命令，那么就执行这个命令，返回给用户
-                    //2. 如果这个是一个单词，就把这个单词转为中文，我们可以使用哈希，如果有一个大的词典，就可以进行匹配
-                    //3. 如果这些都不是的话，就原封不动的返回给用户
-                    int fd=open(buf,O_RDONLY);
-                    if(fd<0)
-                    {
-                        string msg="失败";
-                        cout<<msg<<endl;
-                        send(_sockfd,msg.c_str(),msg.size(),0);
-                    }
-                    else
-                    {
-                        struct stat st;
-                        stat(buf,&st);
-                        sendfile(_sockfd,fd,nullptr,st.st_size);
-
-                    }
-                    // cout << "client # " << buf << endl;
-                    // string echo = "server send ";
-                    // echo += buf;
-                    // write(_sockfd, echo.c_str(), echo.size());
+                    
+                    cout << "client # " << buf << endl;
+                    string echo = "server send ";
+                    echo += buf;
+                    write(_sockfd, echo.c_str(), echo.size());
                 }
                 else if (s == 0)
                 {
@@ -81,9 +64,6 @@ namespace ns_task
             // close(_sockfd);//跑完了就把套接字关掉就可以了
         }
 
-        int operator()() //重载一个仿函数
-        {
-            return Run();
-        }
+        
     };
 }
