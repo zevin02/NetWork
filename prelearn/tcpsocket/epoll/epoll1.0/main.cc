@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     //添加一个监听的文件描述符
     struct epoll_event ev;
     ev.data.fd = sockfd;                           //监听的文件描述符
-    ev.events = EPOLLIN|EPOLLET;                           //事件,读入
+    ev.events = EPOLLIN;                           //事件,读入
     epoll_ctl(epolfd, EPOLL_CTL_ADD, sockfd, &ev); //这里先把监听的文件描述符先添加进去
     while (1)
     {
@@ -203,14 +203,6 @@ int main(int argc, char *argv[])
 
                     char buf[1024];//这里的这个buff被多个sock共用的，下次被别人使用可能就释放掉了，下次再读就不行了，要对之前数据进行保存
 
-                    //非阻塞的原因
-                    //ET只通知一次，recv读取保证全部读取完，循环读，因为我们不知道有多少数据读取，可能会在读取最后一次我们会卡住，读的数据量和我期望的数据量不同，读到最后没有数据，被卡住了（会阻塞住了）
-                    //一旦阻塞住，因为是单进程，服务器就被攻击了
-                    //
-
-                    //ET模式下的fd，必须将该fd设置位非阻塞，这样没数据的话
-
-                    //
                     ssize_t size = read(events[i].data.fd, buf, sizeof(buf)-1);//这里会出现粘包问题，这里如果不读的话，就会一直告诉我们事件就绪
                     //1024个字节，数据没有读完2048字节，下一次就绪还要继续读，还是就绪状态，下次不能保证下次就绪还是你
 
