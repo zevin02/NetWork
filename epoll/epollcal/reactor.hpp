@@ -38,7 +38,7 @@ public:
     Event()
     {
         sockfd=-1;
-        recver=nullptr;
+        recver=nullptr;//初始化，处理的时候判断，如果不为空，它的对应的回调机制就被设置了
         sender=nullptr;
         errer=nullptr;
         R=nullptr;
@@ -72,7 +72,6 @@ public:
     Reactor()
     :epfd(-1)
     {
-
     }
     ~Reactor() 
     {
@@ -80,7 +79,7 @@ public:
     //epoll最大的优势在于，就绪事件通知机制---->就绪事件派发逻辑,写一个派发器，dispatcher
     void InitReactor()
     {
-        //先创建一个epoll模型
+        //先创建一个epoll模型,红黑树，就绪队列，回调方法
         epfd=epoll_create(SIZE);
         if(epfd<0)
         {
@@ -153,7 +152,7 @@ public:
             {
                 if(events[sock]->recver)//找到sock对应的事件Event
                 {
-                    //这里不为空，说明这个读回调被设置过
+                    //这里不为空，说明这个读回调被设置过,提前注册了方法
                     //这里就调用它的方法,执行对应的读取
 
                     events[sock]->recver(events[sock]);//放到我的inbuff里面,调用读取的回调函数，我们把所有的差错处理都放在IO流里面
