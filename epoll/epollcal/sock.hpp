@@ -60,7 +60,7 @@ class Sock
         int peerfd=accept(sockfd,(struct sockaddr*)&peer,&len);//这个地方是非阻塞，可能是读出错，也可能是读到EAGIN
         if(peerfd<0)
         {
-            perror("accept");
+            // perror("accept");
         }
         return peerfd;
     }

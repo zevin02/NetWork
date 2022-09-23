@@ -22,18 +22,17 @@ void SplitSegment(string& inbuffer,vector<string>* tokens,string sep )
 {
     //单纯的&是输入输出型参数
     //* 是输出型参数
-    int prepos=0;
     while(true)
     {
-        auto pos=inbuffer.find(sep,prepos);
+        cout<<"inbuff:"<<inbuffer<<endl;//我们查看每次发送的数据
+        auto pos=inbuffer.find(sep);
         if(pos==string::npos)
         {
             //没有找到X，说明读取的报文不完整
             break;
         }
         //读取的是完整的报文
-        string sub=inbuffer.substr(prepos,pos);//从0开始读pos个字节，来截取
-        prepos=pos+1;
+        string sub=inbuffer.substr(0,pos);//从0开始读pos个字节，来截取
         tokens->push_back(sub);//这里面存放的就是一个一个的报文1+2,3*4这样有效的报文
 
         //这里就读取了报文，把刚才读走的数据给移除

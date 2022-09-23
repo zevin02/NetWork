@@ -6,6 +6,9 @@
 #include"Accepter.hpp"
 #include"Util.hpp"
 
+//Reactor反应堆模式：通过多路转接方案，被动的采用事件派发的方式，反向的调用对应的回调函数
+//每个事件加入反应堆之前都已经设置了自己如果触发该使用什么方法
+
 int main(int argc, char *argv[])
 {
     if (argc != 2)
@@ -19,6 +22,12 @@ int main(int argc, char *argv[])
     Sock::Listen(listenfd);
 
     //创建一个Reactor对象
+    //1.要检测到事件
+    //2.派发事件--- Dispatcher(派发+IO)+业务处理（线程池）,半同步半异步的处理，用到的最多就是Reactor模式
+    //3.连接
+    //4.IO---recver,sender
+
+
     Reactor* R=new Reactor();
     R->InitReactor();
 
