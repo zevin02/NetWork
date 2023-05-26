@@ -113,7 +113,21 @@ func main() {
 	}
 }
 ```
+## 开启与关闭Nagle算法
+当chOPt=1时关闭Nagle算法
+当chOpt=0时打开Nagle算法
+~~~c
+int   nErr=setsockopt(   m_socket,   IPPROTO_TCP,   TCP_NODELAY,   &chOpt,   sizeof(char));  
+~~~
 
+# Nagle算法与延迟ACK
+**延迟ACK**指：接收端不会对每个报文都进行一个ACK，而是收到一个报文之后会等待`延时ACK计时器`后才会再统一对接收到的报文进行ACK
+
+**Nagle算法**指：一段时间内只有一个报文会在传输，等待缓冲区满或者收到ACK才会发送新报文
+
+
+![](https://i.imgur.com/OoEgUxV.png)
+这也就会造成死锁
 
 # 参考
 [深入浅出TCPIP之Nagle算法](https://cloud.tencent.com/developer/article/1784570)
